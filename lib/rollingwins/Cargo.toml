@@ -1,0 +1,13 @@
+[package]
+name = "rollingwins"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "rollingwins"
+crate-type = ["cdylib"]
+
+[dependencies]
+polars = "0.52.0"
+pyo3 = { version = "0.26", features = ["extension-module"] }
+pyo3-polars = { version = "0.25", features = ["derive"] }

@@ -1,0 +1,30 @@
+[project]
+name = "saver"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "htmltools>=0.6.0",
+    "importlib>=1.0.4",
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.1",
+    "plotly>=6.5.2",
+    "polars>=1.37.1",
+    "pyarrow>=22.0.0",
+    "scipy>=1.17.0",
+    "shiny>=1.5.1",
+    "shinywidgets>=0.7.0",
+]
+
+[build-system]
+requires = ["maturin>=1.0"]
+build-backend = "maturin"
+
+[tool.uv.build-backend]
+data = { data = "data" }
+
+[tool.maturin]
+python-source = "."
+module-name = "saver.rollingwins"
+manifest-path = "lib/rollingwins/Cargo.toml"
