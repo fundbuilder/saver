@@ -48,7 +48,6 @@ fn calculate_rolling_returns_df(
         returns.push(return_pct);
     }
 
-    // Create a new DataFrame with the returns using NamedFrom
     let series_name = format!("{}_return_{}_day", column, k);
     let result = DataFrame::new(vec![Series::new(series_name.into(), &returns).into()])
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;

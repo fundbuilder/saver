@@ -19,8 +19,19 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: rustfmt
+
       - name: Install the project
         run: uv sync --locked --all-extras --dev
+
+      - name: Run cargo format check
+        working-directory: ./lib/rollingwins
+        run: cargo fmt -- --check
 
       - name: Run static analysis
         run: uvx ruff check

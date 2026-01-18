@@ -5,8 +5,10 @@ build/
 dist/
 wheels/
 *.egg-info
+*.so
 
 lib/rollingwins/target/
+.vscode/
 
 # Virtual environments
 .venv
