@@ -8,3 +8,7 @@ check:
 fix:
 	uv run ruff check --fix .
 	uv run ruff format .
+
+.PHONY: run
+run:
+	uv run shiny run main.py
