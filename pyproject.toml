@@ -1,7 +1,7 @@
 [project]
 name = "saver"
 version = "0.1.0"
-description = "Add your description here"
+description = "Shiny app to visualize market returns."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -28,3 +28,15 @@ data = { data = "data" }
 python-source = "."
 module-name = "saver.rollingwins"
 manifest-path = "lib/rollingwins/Cargo.toml"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.13",
+]
+
+[tool.ty.environment]
+root = ["."]
+
+[tool.ty.src]
+include = ["lib/rollingwins"]
+exclude = ["scripts"]

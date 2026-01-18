@@ -1,8 +1,10 @@
+import logging
 from pathlib import Path
 import polars as pl
 from shiny import App, ui, render, reactive
 import plotly.graph_objects as go
-
+import numpy as np
+from scipy import stats
 from shinywidgets import output_widget, render_widget
 
 import rollingwins
@@ -41,10 +43,6 @@ data_file: Path = Path(__file__).parent / "data" / "sp500_historical.csv"
 
 df: pl.DataFrame = load_sp500_data(data_file)
 
-# rolling_windows_df: pl.DataFrame = rollingwins.calculate_rolling_returns_df(df, "Close", 30)
-
-# print(rolling_windows_df.head(5))
-
 app_ui = ui.page_fluid(
     ui.panel_title("S&P 500 Historical Data"),
     ui.layout_sidebar(
@@ -75,25 +73,21 @@ app_ui = ui.page_fluid(
 )
 
 
-# Server
-def server(input, output, session):
+def server(input, output, session) -> None:
     @render.ui
-    def price_plot():
+    def price_plot() -> ui.TagList:
         filtered_df = df.filter(
             (pl.col("Date") >= input.date_range()[0])
             & (pl.col("Date") <= input.date_range()[1])
         )
 
-        # Efficiently format data for JS
         data_rows = [
             f'[new Date("{row[0].isoformat()}"), {row[1]}]'
             for row in filtered_df.iter_rows()
         ]
         data_js = ",\n".join(data_rows)
 
-        # Use ui.tag_list to combine the HTML elements
         return ui.TagList(
-            # Load dependencies (Shiny handles these correctly)
             ui.head_content(
                 ui.tags.link(
                     rel="stylesheet",
@@ -103,9 +97,7 @@ def server(input, output, session):
                     src="https://cdnjs.cloudflare.com/ajax/libs/dygraph/2.2.1/dygraph.min.js"
                 ),
             ),
-            # The Container
             ui.tags.div(id="graphdiv", style="width:100%; height:400px;"),
-            # The Logic
             ui.tags.script(f"""
                 // We use a small delay to ensure the div is in the DOM
                 setTimeout(function() {{
@@ -124,7 +116,7 @@ def server(input, output, session):
 
     @render_widget
     @reactive.event(input.calc_returns)
-    def returns_dist_plot():
+    def returns_dist_plot() -> go.Figure:
         filtered_df = df.filter(
             (pl.col("Date") >= input.date_range()[0])
             & (pl.col("Date") <= input.date_range()[1])
@@ -134,38 +126,33 @@ def server(input, output, session):
         k_months = input.k_days()
         k_trading_days = k_months * TRADING_DAYS_PER_MONTH
         try:
-            # Calculate rolling returns using Rust
             returns: pl.DataFrame = rollingwins.calculate_rolling_returns_df(
                 filtered_df, "Close", k_trading_days
             )
             returns_pct = [
                 r * 100 for r in returns[returns.columns[0]].to_list()
-            ]  # Convert to percentage
+            ]
 
-            # Create histogram with distribution curve
             fig = go.Figure()
 
-            # Add histogram
             fig.add_trace(
                 go.Histogram(
                     x=returns_pct,
-                    nbinsx=50,
+                    nbinsx=200,
                     name="Distribution",
                     marker_color="#1f77b4",
                     opacity=0.7,
                     histnorm="probability density",
+                    hoverinfo="none",
                 )
             )
-
-            # Calculate KDE for smooth curve
-            import numpy as np
-            from scipy import stats
 
             kde = stats.gaussian_kde(returns_pct)
             x_range = np.linspace(min(returns_pct), max(returns_pct), 200)
             kde_values = kde(x_range)
 
-            # Add KDE curve
+            cdf_values = np.array([kde.integrate_box_1d(-np.inf, x) for x in x_range])
+
             fig.add_trace(
                 go.Scatter(
                     x=x_range,
@@ -173,10 +160,15 @@ def server(input, output, session):
                     mode="lines",
                     name="Density Curve",
                     line=dict(color="#ff7f0e", width=3),
+                    customdata=np.column_stack((cdf_values * 100,)),
+                    hovertemplate=(
+                        "Return: %{x:.2f}%<br>"
+                        "CDF: %{customdata[0]:.2f}%<br>"
+                        "<extra></extra>"
+                    ),
                 )
             )
 
-            # Add mean line
             mean_return = sum(returns_pct) / len(returns_pct)
             fig.add_vline(
                 x=mean_return,
@@ -198,7 +190,7 @@ def server(input, output, session):
             return fig
 
         except Exception as e:
-            # Return empty figure with error message
+            logging.error("error calculating cdf of returns %s", e)
             fig = go.Figure()
             fig.add_annotation(
                 text=f"Error: {str(e)}",
@@ -212,7 +204,7 @@ def server(input, output, session):
             return fig
 
     @render.text
-    def summary_text():
+    def summary_text() -> str:
         filtered_df = df.filter(
             (pl.col("Date") >= input.date_range()[0])
             & (pl.col("Date") <= input.date_range()[1])
