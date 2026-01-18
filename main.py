@@ -89,13 +89,12 @@ app_ui = ui.page_fluid(
                     ),
                 ),
             ),
-            ui.hr(),
             ui.input_action_button(
                 "calc_returns", "Calculate Optimal Mix", class_="btn-primary w-100"
             ),
         ),
         ui.card(
-            ui.card_header("Projected Returns Distribution"),
+            ui.card_header("S&P 500 Historical Returns Distribution"),
             output_widget("returns_dist_plot"),
         ),
         ui.layout_columns(

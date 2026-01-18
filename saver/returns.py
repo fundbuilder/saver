@@ -128,7 +128,7 @@ def get_returns_distribution_plot(
         yaxis_title="Density",
         showlegend=True,
         height=500,
-        hovermode="x unified",
+        hovermode="x",
     )
 
     return fig

@@ -38,5 +38,5 @@ dev = [
 root = ["."]
 
 [tool.ty.src]
-include = ["lib/rollingwins"]
+include = ["lib/rollingwins", "./main.py"]
 exclude = ["scripts"]
